@@ -1,0 +1,617 @@
+/* ToDoKnist — pixel-art knitting loom styles */
+
+@font-face {
+  font-family: "Press Start 2P";
+  src:
+    url("../assets/press-start-2p.woff2") format("woff2"),
+    url("../assets/press-start-2p.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+:root {
+  --red: #c1443c;
+  --cream: #f5ede0;
+  --ink: #222;
+  --border: #111;
+  --muted: #888;
+  --teal: #2a9d8f;
+  --mustard: #e9b824;
+  --pink: #ff8080;
+  --gold: #ffd700;
+  --metal: #3a3a3a;
+  --metal-hi: #555;
+  --darkbg: #1c1c1c;
+  --font: "Press Start 2P", "Courier New", monospace;
+  /* Opaque 10x10 SVG fills. On some Linux compositors background-color leaks
+     alpha (~25% intensity) but background-image renders opaquely.  Using a
+     path element (not rect) with rgb() fill (not #%23 hex) matches the fabric's
+     proven SVG pattern and avoids swiftshader tiling edge-cases. */
+  --bg-red: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpath d='M0 0h10v10h-10z' fill='rgb(193,68,60)'/%3E%3C/svg%3E");
+  --bg-cream: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpath d='M0 0h10v10h-10z' fill='rgb(245,237,224)'/%3E%3C/svg%3E");
+  --bg-dark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpath d='M0 0h10v10h-10z' fill='rgb(28,28,28)'/%3E%3C/svg%3E");
+  --bg-ink: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpath d='M0 0h10v10h-10z' fill='rgb(34,34,34)'/%3E%3C/svg%3E");
+  --bg-black: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpath d='M0 0h10v10h-10z' fill='rgb(0,0,0)'/%3E%3C/svg%3E");
+  --bg-gray: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpath d='M0 0h10v10h-10z' fill='rgb(106,106,106)'/%3E%3C/svg%3E");
+  --bg-cream-hi: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpath d='M0 0h10v10h-10z' fill='rgb(239,227,210)'/%3E%3C/svg%3E");
+  --bg-white: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpath d='M0 0h10v10h-10z' fill='rgb(255,255,255)'/%3E%3C/svg%3E");
+  --bg-mustard: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpath d='M0 0h10v10h-10z' fill='rgb(233,184,36)'/%3E%3C/svg%3E");
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  font-family: var(--font);
+  color: var(--ink);
+  overflow: hidden;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+  user-select: none;
+  cursor: default;
+}
+
+button {
+  font-family: var(--font);
+  cursor: pointer;
+}
+
+.app {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  -webkit-app-region: drag;
+}
+
+.column {
+  width: 380px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* interactive surfaces are not draggable (override .app drag) */
+.idle,
+.fabric,
+.status {
+  -webkit-app-region: no-drag;
+}
+
+/* ---------- Loom top (needles only, transparent) ---------- */
+.loom {
+  width: 380px;
+  background: transparent;
+  border: none;
+  padding: 6px 30px;
+  position: relative;
+  -webkit-app-region: drag;
+}
+
+.needles {
+  position: relative;
+  width: 320px;
+  height: 40px;
+  margin: 0 auto;
+}
+
+.needle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 320px;
+  height: 8px;
+  background: var(--metal);
+  border: 2px solid var(--border);
+}
+.needle.a {
+  transform: translate(-50%, -50%) rotate(26deg);
+}
+.needle.b {
+  transform: translate(-50%, -50%) rotate(-26deg);
+}
+.needle-cross {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  transform: translate(-50%, -50%);
+  background-color: var(--red);
+  background-image: var(--bg-red);
+  border: 2px solid var(--border);
+  z-index: 2;
+}
+
+.skein-band {
+  width: 320px;
+  height: 16px;
+  margin: 8px auto 0;
+  background-color: #6a6a6a;
+  border: 2px solid var(--border);
+  background-image:
+    var(--bg-gray),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='8'%3E%3Cpath d='M1 2h4' stroke='%23444' stroke-width='1.5'/%3E%3Cpath d='M5 6h4' stroke='%23444' stroke-width='1.5'/%3E%3C/svg%3E");
+}
+
+.yarn-slot {
+  width: 280px;
+  height: 6px;
+  margin: 6px auto 0;
+  background-color: #000;
+  background-image: var(--bg-black);
+  border: 1px solid var(--border);
+}
+
+/* ---------- Body (transparent, holds fabric + status) ---------- */
+.body {
+  width: 380px;
+  background: transparent;
+  border: none;
+  padding: 4px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: relative;
+  min-height: 0;
+  flex: 0 1 auto;
+}
+.body:not(.loaded) {
+  justify-content: center;
+}
+
+/* idle panel (shown when no plan loaded) */
+.idle {
+  align-self: center;
+  text-align: center;
+  color: var(--cream);
+  padding: 18px 20px;
+  width: 100%;
+  text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+}
+.idle-line {
+  font-size: 12px;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.idle-line .cursor {
+  display: inline-block;
+  color: var(--cream);
+  animation: blink 0.8s steps(1) infinite;
+}
+@keyframes blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
+}
+.idle-hint {
+  margin-top: 14px;
+  font-size: 8px;
+  color: #f0d9cf;
+  letter-spacing: 0.5px;
+  line-height: 1.6;
+}
+
+.body.drag-over .idle {
+  outline: 3px dashed var(--cream);
+  outline-offset: 4px;
+}
+
+/* ---------- Fabric (cream yarn sheet) ---------- */
+.fabric {
+  width: 300px;
+  align-self: center;
+  background-color: var(--cream);
+  border: 3px solid var(--ink);
+  border-bottom: none;
+  padding: 10px 14px 8px;
+  min-height: 90px;
+  max-height: 220px; /* focused cap */
+  overflow: hidden;
+  position: relative;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='8'%3E%3Cpath d='M1 2h3' stroke='%23222' stroke-width='1' stroke-opacity='0.10'/%3E%3Cpath d='M6 6h3' stroke='%23222' stroke-width='1' stroke-opacity='0.10'/%3E%3C/svg%3E");
+}
+.body.list .fabric {
+  max-height: 420px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.fabric-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-transform: uppercase;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--ink);
+}
+.fabric-title .fdots {
+  color: var(--muted);
+  flex: 0 0 auto;
+}
+.fabric-title .ftext {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
+}
+
+.fabric-divider {
+  border: 0;
+  border-top: 2px dotted var(--red);
+  margin: 8px 0 10px;
+}
+
+.fabric-scroll {
+  min-height: 0;
+}
+
+/* ---------- Task rows ---------- */
+.task {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 5px 0;
+  font-size: 8px;
+  line-height: 1.6;
+  color: var(--ink);
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+.task .marker {
+  flex: 0 0 14px;
+  width: 14px;
+  height: 14px;
+  background-color: var(--cream);
+  background-image: var(--bg-cream);
+  border: 2px solid var(--ink);
+  position: relative;
+  margin-top: 1px;
+}
+.task.done .marker {
+  background-color: var(--red);
+  background-image: var(--bg-red);
+  border-color: var(--ink);
+}
+.task.done .marker::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 1px;
+  width: 8px;
+  height: 8px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M1 4 L3 6 L7 1.5' fill='none' stroke='%23F5EDE0' stroke-width='1.6' stroke-linecap='square'/%3E%3C/svg%3E")
+    no-repeat center / contain;
+}
+.task .label {
+  flex: 1 1 auto;
+  word-break: break-word;
+}
+.task.done .label {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--ink);
+}
+
+/* section label */
+.section-label {
+  margin-top: 10px;
+  padding-top: 6px;
+  border-top: 1px dotted var(--red);
+  text-transform: uppercase;
+  color: var(--red);
+  font-size: 7px;
+  letter-spacing: 1px;
+  position: relative;
+}
+.section-label:first-child {
+  margin-top: 0;
+  border-top: none;
+  padding-top: 0;
+}
+
+/* focus-mode hint: tells user more tasks remain */
+.focus-hint {
+  margin-top: 10px;
+  font-size: 7px;
+  color: var(--muted);
+  text-align: center;
+  letter-spacing: 0.5px;
+  line-height: 1.6;
+  text-shadow: 1px 1px 0 #000;
+}
+
+/* section completion stamp */
+.stamp {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 7px;
+  color: var(--red);
+  border: 1.5px solid var(--red);
+  padding: 1px 3px;
+  transform: rotate(-12deg);
+  letter-spacing: 0.5px;
+  background-color: var(--cream);
+  background-image: var(--bg-cream);
+  vertical-align: middle;
+}
+
+/* ---------- Status bar (transparent) ---------- */
+.status {
+  width: 380px;
+  background: transparent;
+  border: none;
+  font-size: 8px;
+  color: var(--cream);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 10px;
+  text-shadow: 1px 1px 0 #000;
+}
+.progress {
+  letter-spacing: 0.5px;
+}
+.toggles {
+  display: flex;
+  gap: 8px;
+}
+.tg {
+  background-color: var(--cream);
+  background-image: var(--bg-cream);
+  border: 2px solid var(--ink);
+  color: var(--ink);
+  font-size: 9px;
+  padding: 3px 6px;
+  line-height: 1;
+  text-shadow: none;
+}
+.tg:hover {
+  background-color: #efe3d2;
+  background-image: var(--bg-cream-hi);
+}
+.tg:active {
+  background-color: var(--ink);
+  background-image: var(--bg-ink);
+  color: var(--cream);
+}
+
+/* ---------- Custom scrollbar (4px red on cream) ---------- */
+.fabric::-webkit-scrollbar {
+  width: 4px;
+}
+.fabric::-webkit-scrollbar-track {
+  background: var(--cream);
+}
+.fabric::-webkit-scrollbar-thumb {
+  background: var(--red);
+}
+
+/* ---------- FX layer (sparkles / confetti) ---------- */
+.fx-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  overflow: hidden;
+}
+.sparkle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: var(--mustard);
+  z-index: 50;
+}
+.confetti {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  z-index: 50;
+}
+
+/* ---------- Completion view ---------- */
+.complete-view {
+  text-align: center;
+  padding: 30px 0;
+}
+.all-knit {
+  color: var(--red);
+  font-size: 14px;
+  letter-spacing: 2px;
+  animation: pop-in 0.2s steps(2) both;
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ---------- Popup overlay ---------- */
+.overlay[hidden] { display: none; }
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  -webkit-app-region: no-drag;
+}
+.popup {
+  width: 320px;
+  background-color: var(--cream);
+  background-image: var(--bg-cream);
+  border: 3px solid var(--border);
+  padding: 18px 16px 16px;
+  color: var(--ink);
+  box-shadow: none;
+}
+.popup h2 {
+  font-size: 11px;
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+}
+.popup p {
+  font-size: 8px;
+  line-height: 1.6;
+  margin-bottom: 10px;
+  color: #555;
+}
+.popup textarea {
+  width: 100%;
+  height: 72px;
+  resize: none;
+  background-color: #fff;
+  background-image: var(--bg-white);
+  border: 2px solid var(--ink);
+  padding: 6px;
+  font-family: var(--font);
+  font-size: 8px;
+  line-height: 1.6;
+  color: var(--ink);
+  margin-bottom: 12px;
+  -webkit-app-region: no-drag;
+}
+.popup textarea::placeholder {
+  color: var(--muted);
+}
+.popup textarea:focus {
+  outline: 2px solid var(--red);
+}
+.popup-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.popup-actions button {
+  background-color: var(--cream);
+  background-image: var(--bg-cream);
+  border: 2px solid var(--ink);
+  font-size: 8px;
+  padding: 6px 8px;
+  color: var(--ink);
+}
+.popup-actions button.primary {
+  background-color: var(--red);
+  background-image: var(--bg-red);
+  color: var(--cream);
+  border-color: var(--ink);
+}
+.popup-actions button:hover {
+  background-color: var(--ink);
+  background-image: var(--bg-ink);
+  color: var(--cream);
+}
+
+/* ---------- Inline vault error ---------- */
+.vault-err {
+  position: fixed;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--ink);
+  background-image: var(--bg-ink);
+  color: var(--pink);
+  font-size: 7px;
+  padding: 4px 6px;
+  border: 1px solid var(--pink);
+  z-index: 120;
+  max-width: 360px;
+  text-align: center;
+}
+
+/* ---------- Animations: check / fade / shake ---------- */
+.task.checking .marker::after {
+  animation: checkpop 0.18s steps(2) both;
+}
+@keyframes checkpop {
+  from {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.task.checking .label {
+  animation: strike 0.18s steps(2) both;
+}
+@keyframes strike {
+  from {
+    color: var(--ink);
+  }
+  to {
+    color: var(--muted);
+    text-decoration: line-through;
+  }
+}
+.task.fading {
+  animation: fadeout 0.25s steps(2) forwards;
+}
+@keyframes fadeout {
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.loom.shake {
+  animation: shake 0.4s steps(4);
+}
+@keyframes shake {
+  0% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+  75% {
+    transform: translateX(-2px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.task.focused {
+  animation: slidein 0.3s steps(3) both;
+}
+@keyframes slidein {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

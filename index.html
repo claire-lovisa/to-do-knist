@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; media-src 'self' data:;" />
+  <link rel="stylesheet" href="renderer/styles.css" />
+  <title>ToDoKnist</title>
+</head>
+<body>
+  <div class="app" id="app">
+    <div class="column" id="column">
+      <!-- Loom top: crossed needles (draggable) -->
+      <div class="loom" id="loom">
+        <div class="needles">
+          <div class="needle a"></div>
+          <div class="needle b"></div>
+          <div class="needle-cross"></div>
+        </div>
+      </div>
+
+      <!-- Red body: holds the idle panel and the knitted fabric -->
+      <div class="body" id="body">
+        <div class="idle" id="idle">
+          <div class="idle-line"><span>knit your plan...</span><span class="cursor">|</span></div>
+          <div class="idle-hint">drag &amp; drop a .md file or paste (Ctrl+V)</div>
+        </div>
+
+        <div class="fabric" id="fabric">
+          <div class="fabric-title" id="fTitle"></div>
+          <div class="fabric-divider"></div>
+          <div class="fabric-scroll" id="fScroll">
+            <div class="focus-view" id="focusView"></div>
+            <div class="list-view" id="listView" hidden></div>
+            <div class="complete-view" id="completeView" hidden>
+              <div class="all-knit">ALL KNIT &#10003;</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status bar: progress + view toggle + sound toggle -->
+      <div class="status" id="status">
+        <span class="progress" id="progress">0/0 done</span>
+        <span class="toggles">
+          <button class="tg view" id="viewBtn" type="button" title="Show full list">+</button>
+          <button class="tg sound" id="soundBtn" type="button" title="Sound on">&#9834;</button>
+        </span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Sparkles + confetti layer -->
+  <div class="fx-layer" id="fxLayer" aria-hidden="true"></div>
+
+  <!-- Popup overlay (completion / abort) -->
+  <div class="overlay" id="overlay" hidden>
+    <div class="popup" id="popup" role="dialog" aria-modal="true"></div>
+  </div>
+
+  <!-- Inline vault error -->
+  <div class="vault-err" id="vaultErr" hidden></div>
+
+  <script src="renderer/app.js"></script>
+</body>
+</html>
