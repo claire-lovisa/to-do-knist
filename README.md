@@ -2,6 +2,10 @@
 
 :warning: Vibe coding experiment :warning:
 
+<img width="550" height="287" alt="image" src="https://github.com/user-attachments/assets/515cc653-7052-4241-aeee-524de75c4cee" />
+
+<img width="550" height="442" alt="image" src="https://github.com/user-attachments/assets/2f0ecfdb-666f-4531-930f-6d701a805e50" />
+
 A small, frameless, always-on-top window that looks like a pixel-art knitting
 loom. Two crossed needles sit at the top; a sheet of cream yarn hangs below
 them. Give it a Markdown checklist — it knits each task in turn and writes a
