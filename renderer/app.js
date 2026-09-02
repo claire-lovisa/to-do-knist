@@ -57,6 +57,24 @@ function localStamp(d) {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
+// Render the current plan as a Markdown checklist for the daily note.
+// Groups tasks under their sections; uses [x]/[ ] markers.
+function buildPlanMarkdown(plan) {
+  if (!plan) return '';
+  const lines = [];
+  lines.push(`### ${plan.title}`);
+  for (const sec of plan.sections) {
+    if (sec.name) lines.push(`\n## ${sec.name}`);
+    for (const idx of sec.indices) {
+      const t = plan.tasks[idx];
+      if (!t) continue;
+      const mark = t.done ? 'x' : ' ';
+      lines.push(`- [${mark}] ${t.text}`);
+    }
+  }
+  return lines.join('\n');
+}
+
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
@@ -431,11 +449,11 @@ function showCompletionPopup() {
 
   document.getElementById('saveNew').onclick = async () => {
     const note = (ta.value || '').trim();
-    if (note) {
-      const body = `**session note (${localStamp()}):** ${note.replace(/\s+/g, ' ')}`;
-      const r = await API.appendNote(body);
-      if (!r.ok) showVaultErr('could not write daily note: ' + (r.error || ''));
-    }
+    const ts = localStamp();
+    let body = `**session note (${ts}):** ${state.plan.title} — all done\n\n${buildPlanMarkdown(state.plan)}`;
+    if (note) body += `\n\n**note:** ${note.replace(/\s+/g, ' ')}`;
+    const r = await API.appendNote(body);
+    if (!r.ok) showVaultErr('could not write daily note: ' + (r.error || ''));
     el.overlay.hidden = true;
     await resetToIdle();
   };
@@ -460,7 +478,7 @@ function showAbortPopup() {
   el.overlay.hidden = false;
 
   document.getElementById('abortLog').onclick = async () => {
-    const body = `**aborted plan (${localStamp()}):** ${state.plan.title} — ${done}/${total} tasks done`;
+    const body = `**aborted plan (${localStamp()}):** ${state.plan.title} — ${done}/${total} tasks done\n\n${buildPlanMarkdown(state.plan)}`;
     const r = await API.appendNote(body);
     if (!r.ok) showVaultErr('could not write daily note: ' + (r.error || ''));
     el.overlay.hidden = true;
